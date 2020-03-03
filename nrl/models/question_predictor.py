@@ -145,28 +145,28 @@ class QuestionPredictor(Model):
 
 
 
-    @classmethod
-    def from_params(cls, vocab: Vocabulary, params: Params) -> 'BIOLabeler':
-        embedder_params = params.pop("text_field_embedder")
-        text_field_embedder = TextFieldEmbedder.from_params(vocab, embedder_params)
-        stacked_encoder = Seq2SeqEncoder.from_params(params.pop("stacked_encoder"))
-        predicate_feature_dim = params.pop("predicate_feature_dim", 100)
-        dim_hidden = params.pop("hidden_dim", 100)
-
-        question_generator = QuestionGenerator.from_params(vocab, params.pop("question_generator"))
-
-
-
-        initializer = InitializerApplicator.from_params(params.pop('initializer', []))
-        regularizer = RegularizerApplicator.from_params(params.pop('regularizer', []))
-
-        params.assert_empty(cls.__name__)
-
-        return cls(vocab=vocab,
-                   text_field_embedder=text_field_embedder,
-                   stacked_encoder=stacked_encoder,
-                   question_generator=question_generator,
-                   predicate_feature_dim=predicate_feature_dim,
-                   dim_hidden=dim_hidden,
-                   initializer=initializer,
-                   regularizer=regularizer)
+    # @classmethod
+    # def from_params(cls, vocab: Vocabulary, params: Params) -> 'BIOLabeler':
+    #     embedder_params = params.pop("text_field_embedder")
+    #     text_field_embedder = TextFieldEmbedder.from_params(vocab, embedder_params)
+    #     stacked_encoder = Seq2SeqEncoder.from_params(params.pop("stacked_encoder"))
+    #     predicate_feature_dim = params.pop("predicate_feature_dim", 100)
+    #     dim_hidden = params.pop("hidden_dim", 100)
+    #
+    #     question_generator = QuestionGenerator.from_params(vocab, params.pop("question_generator"))
+    #
+    #
+    #
+    #     initializer = InitializerApplicator.from_params(params.pop('initializer', []))
+    #     regularizer = RegularizerApplicator.from_params(params.pop('regularizer', []))
+    #
+    #     params.assert_empty(cls.__name__)
+    #
+    #     return cls(vocab=vocab,
+    #                text_field_embedder=text_field_embedder,
+    #                stacked_encoder=stacked_encoder,
+    #                question_generator=question_generator,
+    #                predicate_feature_dim=predicate_feature_dim,
+    #                dim_hidden=dim_hidden,
+    #                initializer=initializer,
+    #                regularizer=regularizer)

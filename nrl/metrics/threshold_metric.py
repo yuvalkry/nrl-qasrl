@@ -116,9 +116,12 @@ class ThresholdMetric(Metric):
                     if span not in max_pred_scores or max_f1 > max_pred_scores[span][0]:
                         max_pred_scores[span] = (max_f1, gold_span_tuple, max_gold)
 
-        matching = nx.max_weight_matching(G)
-
-        matching = [(g, p) for g, p in matching.items() if g in gold_spans]
+        matching1 = nx.max_weight_matching(G)
+        matching = []
+        for item in matching1:
+            if item[0] in gold_spans:
+                matching.append(item)
+        # [(g, p) for g, p in matching.items() if g in gold_spans]
 
         picked_gold = {}
         picked_pred = {}

@@ -27,11 +27,18 @@ class QaSrlParser(Model):
                 labeled_spans: torch.LongTensor = None,
                 annotations: Dict = None,
                 **kwargs):
-        raise NotImplementedException()
+        raise NotImplementedError()
 
     @classmethod
     def from_params(cls, vocab: Vocabulary, params: Params) -> 'QaSrlParser':
-        span_detector = Model.from_params(vocab, params.pop("span_detector"))
-        question_predictor = Model.from_params(vocab, params.pop("question_predictor"))
+        span_detector = Model.from_params(vocab=vocab, params=params.pop("span_detector"))
+        question_predictor = Model.from_params(vocab=vocab, params=params.pop("question_predictor"))
 
         return QaSrlParser(vocab, span_detector = span_detector, question_predictor = question_predictor)
+
+    # @classmethod
+    # def from_params(cls, vocab: Vocabulary, params: Params) -> 'QaSrlParser':
+    #     span_detector = Model.from_params(vocab, params.pop("span_detector"))
+    #     question_predictor = Model.from_params(vocab, params.pop("question_predictor"))
+    #
+    #     return QaSrlParser(vocab, span_detector = span_detector, question_predictor = question_predictor)

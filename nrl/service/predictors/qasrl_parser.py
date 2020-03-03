@@ -30,7 +30,7 @@ AUX_VERBS = DO_VERBS | BE_VERBS | WILL_VERBS | HAVE_VERBS | MODAL_VERBS
 
 def read_verb_file(verb_file):
     verb_map = {}
-    with open(verb_file, 'r') as f:
+    with open(verb_file, 'r', encoding="utf-8") as f:
         for l in f.readlines():
             inflections = l.strip().split('\t')
             stem, presentsingular3rd, presentparticiple, past, pastparticiple = inflections
@@ -120,9 +120,11 @@ class QaSrlParserPredictor(Predictor):
             num_words, embsize = span_weights.size()
             new_weights = span_weights.new().resize_(num_words + num_added_words, embsize)
             new_weights[:num_words].copy_(span_weights)
+            print("NUM_WORDS")
+            print(num_words)
             new_weights[num_words:].copy_(torch.reshape(added_weights,(
-                added_weights.shape[0]/new_weights[num_words:].shape[1],
-                added_weights.shape[0]/new_weights[num_words:].shape[0])))
+                int(added_weights.shape[0]/new_weights[num_words:].shape[1]),
+                int(added_weights.shape[0]/new_weights[num_words:].shape[0]))))
             self._model.span_detector.text_field_embedder.token_embedder_tokens.weight = Parameter(new_weights)
 
             ques_weights = self._model.question_predictor.text_field_embedder.token_embedder_tokens.weight.data
@@ -130,8 +132,8 @@ class QaSrlParserPredictor(Predictor):
             new_weights = ques_weights.new().resize_(num_words + num_added_words, embsize)
             new_weights[:num_words].copy_(ques_weights)
             new_weights[num_words:].copy_(torch.reshape(added_weights,(
-                added_weights.shape[0]/new_weights[num_words:].shape[1],
-                added_weights.shape[0]/new_weights[num_words:].shape[0])))
+                int(added_weights.shape[0]/new_weights[num_words:].shape[1]),
+                int(added_weights.shape[0]/new_weights[num_words:].shape[0]))))
             self._model.question_predictor.text_field_embedder.token_embedder_tokens.weight = Parameter(new_weights)
 
         verbs_for_instances = results["verbs"] 
