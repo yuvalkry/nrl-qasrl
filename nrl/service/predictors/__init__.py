@@ -1,1 +1,2 @@
 from nrl.service.predictors.qasrl_parser import QaSrlParserPredictor
+from nrl.service.predictors.qanom_parser import QaNomParserPredictor

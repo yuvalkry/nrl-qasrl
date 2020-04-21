@@ -24,6 +24,8 @@ class QuestionPredictionMetric(Metric):
         self._total_words = 0.
         self._total_questions = 0.
         self._correct = [0.] * len(self._slot_labels)
+        self._role_correct = 0. # my QANom labeled-arg measure - based on mapping questions to
+                                # a small set of syntactic roles- subj, obj1, obj2, obj2-<PREP>, When, Where, etc.
         self._partial_correct = 0.
         self._completely_correct = 0.
         self._completely_correct_with_span = 0.
@@ -107,8 +109,20 @@ class QuestionPredictionMetric(Metric):
 
             g = gold_questions[i]
             p = pred_questions[i]
-            if g[0] == p[0] and g[2] == p[2] and g[4] == p[4] and g[6] == p[6]:
+            """
+            g and p original structure:
+            [wh, aux, subj, verb, obj, prep, obj2]
+            g and p current structure:  given by `nrl.data.util.QuestionSlots.slots` 
+            """
+            if g[0] == p[0] and g[2] == p[2] and g[3] == p[3] and g[5] == p[5]:
+                # partial match: wh, subj, obj, obj2
                 self._partial_correct += 1
+
+            # compute self._role_correct
+            from qanom.evaluation.roles import is_equivalent_question
+            from nrl.data.util import QuestionSlots
+            if is_equivalent_question(QuestionSlots.as_qanom_question(g), QuestionSlots.as_qanom_question(p)):
+                self._role_correct += 1
 
             wh = g[0]
             self._wh_total.setdefault(wh, 0.)
@@ -132,8 +146,9 @@ class QuestionPredictionMetric(Metric):
 
         all_metrics = {}
         all_metrics["word-accuracy-overall"] = sum(self._correct) / self._total_words
-        all_metrics["question-accuracy"] = self._completely_correct / self._total_questions
+        all_metrics["question-exact-match-accuracy"] = self._completely_correct / self._total_questions
         all_metrics["partial-question-accuracy"] = self._partial_correct / self._total_questions
+        all_metrics["question-role-accuracy"] = self._role_correct / self._total_questions
 
         if self._count_span:
             all_metrics["question-and-span-accuracy"] = self._completely_correct_with_span / self._total_questions

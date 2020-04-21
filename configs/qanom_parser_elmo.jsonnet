@@ -1,10 +1,12 @@
+local QASRL_DATA_DIR = "data/qasrl-v2";
+local QANOM_DATA_DIR = "data/qanom_annotations";
 {
   "vocabulary": {
     "pretrained_files": {"tokens": "data/glove/glove.6B.100d.txt.gz"},
     "only_include_pretrained_words": true
   },
   "dataset_reader": {
-      "type": "qasrl",
+      "type": "qanom",
       "token_indexers": {
           "tokens": {
             "type": "single_id",
@@ -15,9 +17,9 @@
           }
       }
  },
-  "train_data_path": "${QASRL_DATA_DIR}/orig/train.jsonl.gz",
-  "validation_data_path": "${QASRL_DATA_DIR}/orig/dev.jsonl.gz",
-  "test_data_path": "${QASRL_DATA_DIR}/orig/test.jsonl.gz",
+  "train_data_path": QANOM_DATA_DIR + "/train_set/final/annot.train.csv",
+  "validation_data_path": QANOM_DATA_DIR + "/gold_set/final/annot.final.dev.csv",
+  "test_data_path": QANOM_DATA_DIR + "/gold_set/final/annot.final.test.csv",
   "model": {
     "type": "qasrl_parser",
     "span_detector": {
@@ -46,7 +48,7 @@
           "recurrent_dropout_probability": 0.1
         },
         "predicate_feature_dim":100,
-        "hidden_dim":100
+        "iou_threshold": 0.3,
       },
     "question_predictor": {
         "type": "question_predictor",
@@ -101,5 +103,6 @@
       "type": "adadelta",
       "rho": 0.95
     }
-  }
+  },
+  "prediction_threshold": 0.02,
 }

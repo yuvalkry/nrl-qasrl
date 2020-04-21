@@ -8,11 +8,12 @@ from allennlp.common import Params, Registrable
 class QuestionGenerator(torch.nn.Module, Registrable):
     def __init__(self,
             vocab: Vocabulary,
-            slot_labels : List[str],
-            input_dim: int):
+            input_dim: int,
+            slot_labels : List[str] = None):
         super(QuestionGenerator, self).__init__()
+        from nrl.data.util import QuestionSlots
         self._vocab = vocab
-        self._slot_labels = slot_labels
+        self._slot_labels = slot_labels or QuestionSlots.slots
         self._input_dim = input_dim
 
     def get_slot_labels(self):

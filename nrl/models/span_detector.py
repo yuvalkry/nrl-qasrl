@@ -1,4 +1,4 @@
-from typing import Dict, List, TextIO, Optional
+from typing import Dict, List, TextIO, Optional, Tuple
 
 from overrides import overrides
 import torch
@@ -31,6 +31,8 @@ class SpanDetector(Model):
                  predicate_feature_dim: int,
                  dim_hidden: int = 100,
                  embedding_dropout: float = 0.0,
+                 thresholds: Tuple[float, ...] = (0.5,),    # high threshold lead to less yield (more precision).
+                 iou_threshold: float = .3,
                  initializer: InitializerApplicator = InitializerApplicator(),
                  regularizer: Optional[RegularizerApplicator] = None):
         super(SpanDetector, self).__init__(vocab, regularizer)
@@ -42,7 +44,8 @@ class SpanDetector(Model):
 
         self.embedding_dropout = Dropout(p=embedding_dropout)
 
-        self.threshold_metric = ThresholdMetric()
+        match_heuristic = lambda x,y: x.iou(y) >= iou_threshold
+        self.threshold_metric = ThresholdMetric(thresholds=thresholds, match_heuristic=match_heuristic)
 
         self.stacked_encoder = stacked_encoder
 
@@ -50,6 +53,7 @@ class SpanDetector(Model):
         self.pred = TimeDistributed(Linear(self.dim_hidden, 1))
 
     def forward(self,  # type: ignore
+                # these all are fields in our Instances
                 text: Dict[str, torch.LongTensor],
                 predicate_indicator: torch.LongTensor,
                 labeled_spans: torch.LongTensor = None,
@@ -72,7 +76,7 @@ class SpanDetector(Model):
         span_hidden, span_mask = self.span_hidden(encoded_text, encoded_text, mask, mask)
 
         logits = self.pred(F.relu(span_hidden)).squeeze()
-        probs = F.sigmoid(logits) * span_mask.float()
+        probs = torch.sigmoid(logits) * span_mask.float()
 
         output_dict = {"logits": logits, "probs": probs, 'span_mask': span_mask}
         if labeled_spans is not None:
@@ -80,9 +84,9 @@ class SpanDetector(Model):
             prediction_mask = self.get_prediction_map(labeled_spans, span_label_mask, sequence_length, annotations=annotations)
             loss = F.binary_cross_entropy_with_logits(logits, prediction_mask, weight=span_mask.float(), size_average=False)
             output_dict["loss"] = loss
-            if not self.training:
-                spans = self.to_scored_spans(probs, span_mask)
-                self.threshold_metric(spans, annotations)
+            # if not self.training:
+            spans = self.to_scored_spans(probs, span_mask)
+            self.threshold_metric(spans, annotations)
 
         # We need to retain the mask in the output dictionary
         # so that we can crop the sequences to remove padding
@@ -163,12 +167,13 @@ class SpanDetector(Model):
 
     def get_metrics(self, reset: bool = False):
         metric_dict = self.threshold_metric.get_metric(reset=reset)
-        #if self.training:
+        # metric_dict keys are
+        if self.training:
             # This can be a lot of metrics, as there are 3 per class.
             # During training, we only really care about the overall
             # metrics, so we filter for them here.
             # TODO(Mark): This is fragile and should be replaced with some verbosity level in Trainer.
-            #return {x: y for x, y in metric_dict.items() if "overall" in x}
+            return {x: y for x, y in metric_dict.items() if "wh" not in x}
 
         return metric_dict
 

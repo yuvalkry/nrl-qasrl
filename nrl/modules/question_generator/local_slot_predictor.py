@@ -13,11 +13,11 @@ from allennlp.modules import TimeDistributed
 class LocalSlotPredictor(QuestionGenerator):
     def __init__(self,
             vocab: Vocabulary,
-            slot_labels : List[str],
             input_dim : int,
+            slot_labels : List[str] = None,
             dim_slot_hidden: int = 100,
             share_slot_hidden: bool = False):
-        super(LocalSlotPredictor, self).__init__(vocab, slot_labels, input_dim)
+        super(LocalSlotPredictor, self).__init__(vocab, input_dim, slot_labels)
         self._dim_slot_hidden = dim_slot_hidden
 
         shared_slot_hidden = None
@@ -58,9 +58,9 @@ class LocalSlotPredictor(QuestionGenerator):
 
     @classmethod
     def from_params(cls, vocab: Vocabulary, params: Params) -> 'LocalSlotPredictor':
-        slot_labels = params.pop("slot_labels")
+        slot_labels = params.pop("slot_labels", None)
         input_dim = params.pop("input_dim")
         dim_slot_hidden = params.pop("dim_slot_hidden")
         share_slot_hidden = params.pop("share_slot_hidden", False)
 
-        return LocalSlotPredictor(vocab, slot_labels, input_dim=input_dim, dim_slot_hidden=dim_slot_hidden, share_slot_hidden=share_slot_hidden)
+        return LocalSlotPredictor(vocab, slot_labels=slot_labels, input_dim=input_dim, dim_slot_hidden=dim_slot_hidden, share_slot_hidden=share_slot_hidden)

@@ -19,8 +19,8 @@ from nrl.util.model_utils import block_orthonormal_initialization
 class SequenceSlotPredictor(QuestionGenerator):
     def __init__(self,
             vocab: Vocabulary,
-            slot_labels: List[str],
             input_dim: int,
+            slot_labels: List[str] = None,
             dim_slot_hidden: int = 100,
             dim_rnn_hidden: int = 200,
             dim_embedding: int = 100,
@@ -29,7 +29,7 @@ class SequenceSlotPredictor(QuestionGenerator):
             highway: bool = True,
             share_rnn_cell: bool =  True,
             share_slot_hidden: bool = False):
-        super(SequenceSlotPredictor, self).__init__(vocab, slot_labels, input_dim)
+        super(SequenceSlotPredictor, self).__init__(vocab, input_dim, slot_labels)
         self._dim_embedding = dim_embedding
         self._dim_slot_hidden = dim_slot_hidden
         self._dim_rnn_hidden = dim_rnn_hidden
@@ -146,7 +146,7 @@ class SequenceSlotPredictor(QuestionGenerator):
                 next_mem.append((new_h, new_c))
                 if self._highway:
                     nonlin = self._highway_nonlin[l][i](torch.cat([curr_input, new_h], -1))
-                    gate = F.sigmoid(nonlin)
+                    gate = torch.sigmoid(nonlin)
                     curr_input = gate * new_h + (1. - gate) * self._highway_lin[l][i](curr_input)
                 else:
                     curr_input = new_h
@@ -166,7 +166,7 @@ class SequenceSlotPredictor(QuestionGenerator):
 
     @classmethod
     def from_params(cls, vocab: Vocabulary, params: Params) -> 'SequenceSlotPredictor':
-        slot_labels = params.pop("slot_labels")
+        slot_labels = params.pop("slot_labels", None)
         input_dim = params.pop("input_dim")
         dim_slot_hidden = params.pop("dim_slot_hidden")
         share_slot_hidden = params.pop("share_slot_hidden", False)
@@ -179,4 +179,4 @@ class SequenceSlotPredictor(QuestionGenerator):
 
         params.assert_empty(cls.__name__)
 
-        return SequenceSlotPredictor(vocab, slot_labels, input_dim=input_dim, share_slot_hidden=share_slot_hidden, rnn_layers = rnn_layers, share_rnn_cell = share_rnn_cell, dim_rnn_hidden = dim_rnn_hidden, dim_slot_hidden = dim_slot_hidden, dim_embedding = dim_embedding, recurrent_dropout = recurrent_dropout)
+        return SequenceSlotPredictor(vocab, input_dim=input_dim, slot_labels=slot_labels, share_slot_hidden=share_slot_hidden, rnn_layers = rnn_layers, share_rnn_cell = share_rnn_cell, dim_rnn_hidden = dim_rnn_hidden, dim_slot_hidden = dim_slot_hidden, dim_embedding = dim_embedding, recurrent_dropout = recurrent_dropout)

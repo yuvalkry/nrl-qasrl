@@ -72,7 +72,7 @@ Two config files are included with this repository. These must be modified in or
 Training the Question Detector uses the same command as above but with these config files:
 
 1. `configs/train_question.json` - which reproduces the Sequence model from our paper.
-2. `configs/train_question_elmo` - which, like above, includes the ELMo word representation.
+2. `configs/train_question_elmo.json` - which, like above, includes the ELMo word representation.
 
 ## Combining models
 

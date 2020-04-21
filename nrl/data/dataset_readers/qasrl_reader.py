@@ -15,10 +15,10 @@ from allennlp.data.instance import Instance
 from allennlp.data.token_indexers import SingleIdTokenIndexer, TokenIndexer
 from allennlp.data.fields import Field, TextField, SequenceLabelField, LabelField, ListField, MetadataField, SpanField
 from allennlp.data.tokenizers import Token
-from allennlp.data.dataset_readers.dataset_utils.span_utils import enumerate_spans
+
 
 from nrl.common.span import Span
-from nrl.data.util import AnnotatedSpan, cleanse_sentence_text
+from nrl.data.util import AnnotatedSpan, cleanse_sentence_text, QuestionSlots, str2bool
 
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
@@ -26,8 +26,9 @@ logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 class QaSrlReader(DatasetReader):
     def __init__(self, 
                  token_indexers: Dict[str, TokenIndexer] = None,
+                 training_data_precentage = 1.0,
                  has_provinence = False,
-                 bio_labels = False,
+                 bio_labels = True,
                  slot_labels = None,
                  min_answers = 3,
                  min_valid_answers = 3,
@@ -40,7 +41,8 @@ class QaSrlReader(DatasetReader):
         self._max_spans = None
         self._min_answers = min_answers
         self._min_valid_answers = min_valid_answers
-        self._slot_labels = slot_labels or ["wh", "aux", "subj", "verb", "obj", "prep", "obj2"]
+        # self._slot_labels = slot_labels or ["wh", "aux", "subj", "verb", "obj", "prep", "obj2"]
+        self._slot_labels = slot_labels or QuestionSlots.default_slots
         if bio_labels:
             self._total_args = 0.
             self._skipped_args = 0.
@@ -53,6 +55,9 @@ class QaSrlReader(DatasetReader):
         self._not_enough_valid_answers = 0
         self._instances = 0
         self._qa_pairs = 0
+
+        # update slots in util.QuestionSlots
+        QuestionSlots.slots = self._slot_labels
 
     @overrides
     def _read(self, file_list: str):
@@ -71,7 +76,9 @@ class QaSrlReader(DatasetReader):
                 with codecs.open(cached_path(file_path), 'r', encoding='utf8') as f:
                     for line in f:
                         data.append(json.loads(line))
- 
+
+            # take only %training_data_percentage of training data
+
             for item in data:
                 sent_id = item["sentenceId"]
                 sentence_tokens = item["sentenceTokens"]
@@ -98,11 +105,10 @@ class QaSrlReader(DatasetReader):
                             self._not_enough_valid_answers += 1
                             continue
 
-                        slots = []
-                        for l in self._slot_labels:
-                            slots.append(question_label["questionSlots"][l])
+                        # extract slots
+                        slots = QuestionSlots.get_from_qasrl_question_label(question_label["questionSlots"])
 
-                        provinence = list(question_label["questionSources"])[0]
+                        provenance = list(question_label["questionSources"])[0]
 
                         spans = []
                         for ans in question_label["answerJudgments"]:
@@ -111,7 +117,7 @@ class QaSrlReader(DatasetReader):
                                     spans.append(Span(s[0], s[1]-1))
                         
                         self._qa_pairs += 1
-                        annotations.append(AnnotatedSpan(slots = slots, all_spans = spans, provinence=provinence))
+                        annotations.append(AnnotatedSpan(slots = slots, all_spans = spans, provenance=provenance))
 
                     if annotations:
                         self._instances += 1
@@ -126,7 +132,7 @@ class QaSrlReader(DatasetReader):
         logger.info("\t%d not enough answers"%self._not_enough_answers)
         logger.info("\t%d not enough valid answers"%self._not_enough_valid_answers)
 
-    def _make_instance_from_text(self, sent_tokens, pred_index, annotations = None, sent_id = None):
+    def _make_instance_from_text(self, sent_tokens, pred_index, annotations: List[AnnotatedSpan] = None, sent_id = None):
         instance_dict = {}
 
         if isinstance(sent_tokens, str):
@@ -138,7 +144,7 @@ class QaSrlReader(DatasetReader):
 
         if annotations is not None:
             for i, slot_name in enumerate(self._slot_labels):
-                span_slot = ListField([LabelField(ann.slots[i], label_namespace="slot_%s"%slot_name) for ann in annotations for span in ann.all_spans])
+                span_slot = ListField([LabelField(ann.slots[i], label_namespace=f"slot_{slot_name}") for ann in annotations for span in ann.all_spans])
                 instance_dict['span_slot_%s'%slot_name] = span_slot
 
             labeled_span_field = ListField([SpanField(span.start(), span.end(), text_field) for ann in annotations for span in ann.all_spans])
@@ -189,16 +195,16 @@ class QaSrlReader(DatasetReader):
 
         return max(max_items, key = lambda x: x.size())
 
-    @classmethod
-    def from_params(cls, params: Params) -> 'QaSrlReader':
-        token_indexers = TokenIndexer.dict_from_params(params.pop('token_indexers', Params({"tokens": {"type": "single_id", "lowercase_tokens": True}})))
-        has_provinence = params.pop("has_provinence", False)
-        bio_labels = params.pop("bio_labels", False)
-
-        min_answers = params.pop("min_answers", 3)
-        min_valid_answers = params.pop("min_valid_answers", 3)
-
-        question_sources = params.pop("question_sources", None)
-
-        params.assert_empty(cls.__name__)
-        return QaSrlReader(token_indexers=token_indexers, has_provinence = has_provinence, bio_labels=bio_labels, min_answers=min_answers, min_valid_answers=min_valid_answers, question_sources=question_sources)
+    # @classmethod
+    # def from_params(cls, params: Params) -> 'QaSrlReader':
+    #     token_indexers = TokenIndexer.dict_from_params(params.pop('token_indexers', Params({"tokens": {"type": "single_id", "lowercase_tokens": True}})))
+    #     has_provinence = params.pop("has_provinence", False)
+    #     bio_labels = params.pop("bio_labels", False)
+    #
+    #     min_answers = params.pop("min_answers", 3)
+    #     min_valid_answers = params.pop("min_valid_answers", 3)
+    #
+    #     question_sources = params.pop("question_sources", None)
+    #
+    #     params.assert_empty(cls.__name__)
+    #     return QaSrlReader(token_indexers=token_indexers, has_provinence = has_provinence, bio_labels=bio_labels, min_answers=min_answers, min_valid_answers=min_valid_answers, question_sources=question_sources)

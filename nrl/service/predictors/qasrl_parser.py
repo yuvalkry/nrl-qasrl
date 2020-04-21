@@ -62,10 +62,11 @@ def read_pretrained_file(embeddings_filename, embedding_dim=100):
 
 @Predictor.register("qasrl_parser")
 class QaSrlParserPredictor(Predictor):
-    def __init__(self, model: Model, dataset_reader: DatasetReader) -> None:
+    def __init__(self, model: Model, dataset_reader: DatasetReader, prediction_threshold= None) -> None:
         super().__init__(model, dataset_reader)
         self._tokenizer = SpacyWordSplitter(language='en_core_web_sm', pos_tags=True)
         self._model_vocab = model.vocab
+        self._prediction_threshold = prediction_threshold or 0.5
 
         self._verb_map = read_verb_file("data/wiktionary/en_verb_inflections.txt")
 
@@ -94,11 +95,7 @@ class QaSrlParserPredictor(Predictor):
         return instances, result_dict, words, verb_indexes
 
 
-    @overrides
-    def predict_json(self, inputs: JsonDict, cuda_device: int = 0) -> JsonDict:
-
-        instances, results, words, verb_indexes = self._sentence_to_qasrl_instances(inputs)
-
+    def _expand_vocab(self, words):
         # Expand vocab
         cleansed_words = cleanse_sentence_text(words)
         added_words = []
@@ -122,22 +119,29 @@ class QaSrlParserPredictor(Predictor):
             new_weights[:num_words].copy_(span_weights)
             print("NUM_WORDS")
             print(num_words)
-            new_weights[num_words:].copy_(torch.reshape(added_weights,(
-                int(added_weights.shape[0]/new_weights[num_words:].shape[1]),
-                int(added_weights.shape[0]/new_weights[num_words:].shape[0]))))
+            new_weights[num_words:].copy_(torch.reshape(added_weights, (
+                int(added_weights.shape[0] / new_weights[num_words:].shape[1]),
+                int(added_weights.shape[0] / new_weights[num_words:].shape[0]))))
             self._model.span_detector.text_field_embedder.token_embedder_tokens.weight = Parameter(new_weights)
 
             ques_weights = self._model.question_predictor.text_field_embedder.token_embedder_tokens.weight.data
             num_words, embsize = ques_weights.size()
             new_weights = ques_weights.new().resize_(num_words + num_added_words, embsize)
             new_weights[:num_words].copy_(ques_weights)
-            new_weights[num_words:].copy_(torch.reshape(added_weights,(
-                int(added_weights.shape[0]/new_weights[num_words:].shape[1]),
-                int(added_weights.shape[0]/new_weights[num_words:].shape[0]))))
+            new_weights[num_words:].copy_(torch.reshape(added_weights, (
+                int(added_weights.shape[0] / new_weights[num_words:].shape[1]),
+                int(added_weights.shape[0] / new_weights[num_words:].shape[0]))))
             self._model.question_predictor.text_field_embedder.token_embedder_tokens.weight = Parameter(new_weights)
 
-        verbs_for_instances = results["verbs"] 
-        results["verbs"] = []
+
+    @overrides
+    def predict_json(self, inputs: JsonDict, cuda_device: int = 0) -> JsonDict:
+
+        instances, results, words, verb_indexes = self._sentence_to_qasrl_instances(inputs)
+
+        self._expand_vocab(words)
+
+        verbs_for_instances = results["verbs"]
 
         instances_with_spans = []
         instance_spans = []
@@ -148,7 +152,7 @@ class QaSrlParserPredictor(Predictor):
                 field_dict = instance.fields
                 text_field = field_dict['text']
 
-                spans = [s[0] for s in span_output['spans'] if s[1] >= 0.5]
+                spans = [s[0] for s in span_output['spans'] if s[1] >= self._prediction_threshold]
                 if len(spans) > 0:
                     instance_spans.append(spans)
 
@@ -156,6 +160,14 @@ class QaSrlParserPredictor(Predictor):
                     field_dict['labeled_spans'] = labeled_span_field
                     instances_with_spans.append(Instance(field_dict))
 
+        verb_annotations = self.predict_questions(instances_with_spans, instance_spans, verbs_for_instances, verb_indexes, words)
+        results["verbs"] = verb_annotations
+
+        return results
+
+
+    def predict_questions(self, instances_with_spans, instance_spans, verbs_for_instances, verb_indexes, words):
+        verb_annotations = []
         if instances_with_spans:
             outputs = self._model.question_predictor.forward_on_instances(instances_with_spans)
 
@@ -171,11 +183,12 @@ class QaSrlParserPredictor(Predictor):
                 for question, spans in questions.items():
                     qa_pairs.append({"question":question, "spans":spans})
 
-                results["verbs"].append({"verb": verb, "qa_pairs": qa_pairs, "index": index})
+                verb_annotations.append({"verb": verb, "qa_pairs": qa_pairs, "index": index})
+        return verb_annotations
 
-        return results
 
     def make_question_text(self, slots, verb):
+        # todo consider changes at slots, especially in 'verb' slot
         slots = list(slots)
         verb_slot = slots[3]
         split = verb_slot.split(" ")

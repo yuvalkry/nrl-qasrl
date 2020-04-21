@@ -1,10 +1,13 @@
+local QASRL_DATA_DIR = "data/qasrl-v2";
+local QANOM_DATA_DIR = "data/qanom_annotations";
+
 {
   "vocabulary": {
     "pretrained_files": {"tokens": "data/glove/glove.6B.100d.txt.gz"},
     "only_include_pretrained_words": true
   },
   "dataset_reader": {
-      "type": "qasrl",
+      "type": "qanom",
       "token_indexers": {
           "tokens": {
             "type": "single_id",
@@ -15,11 +18,11 @@
           }
       }
  },
-  "train_data_path": "${QASRL_DATA_DIR}/expanded/train.jsonl.gz",
-  "validation_data_path": "${QASRL_DATA_DIR}/expanded/dev.jsonl.gz",
-  "test_data_path": "${QASRL_DATA_DIR}/orig/test.jsonl.gz",
+  "train_data_path": QANOM_DATA_DIR + "/train_set/final/annot.train.csv",
+  "validation_data_path": QANOM_DATA_DIR + "/gold_set/final/annot.final.dev.csv",
+  "test_data_path": QANOM_DATA_DIR + "/gold_set/final/annot.final.test.csv",
   "model": {
-    "type": "question_predictor",
+    "type": "span_detector",
     "text_field_embedder": {
       "tokens": {
         "type": "embedding",
@@ -35,40 +38,50 @@
         "dropout": 0.5
       }
     },
-    "question_generator": {
-        "type": "sequence",
-        "slot_labels": ["wh", "aux", "subj", "verb", "obj", "prep", "obj2"],
-        "dim_slot_hidden":100,
-        "dim_rnn_hidden": 200,
-        "input_dim": 300,
-        "rnn_layers": 4,
-        "share_rnn_cell": false
-    },
     "stacked_encoder": {
       "type": "alternating_lstm",
       "use_highway": true,
       "input_size": 1224,
       "hidden_size": 300,
-      "num_layers": 4,
+      "num_layers": 8,
       "recurrent_dropout_probability": 0.1
     },
     "predicate_feature_dim":100,
-    "hidden_dim":100
+    "thresholds": [0.2, 0.3, 0.5, 0.7, 0.8],
+    "iou_threshold": 0.3,
   },
   "iterator": {
     "type": "bucket",
     "sorting_keys": [["text", "num_tokens"]],
     "batch_size" : 80
   },
-  "trainer": {
-    "num_epochs": 200,
-    "grad_norm": 1.0,
-    "patience": 20,
-    "validation_metric": "+question-accuracy",
-    "cuda_device": 0,
-    "optimizer": {
-      "type": "adadelta",
-      "rho": 0.95
-    }
+  "trainer":{
+		"type":"callback",
+		"callbacks":[
+			{
+				"type": "validate"
+			},
+			{
+				"type": "checkpoint",
+				"checkpointer":{
+					"num_serialized_models_to_keep":1
+				}
+			},
+			{
+				"type": "track_metrics",
+				"patience": 40,
+				"validation_metric": "+precision-at-0.3"
+			},
+			{
+				"type": "log_metrics_to_wandb"
+			}
+		],
+		"optimizer": {
+			"type": "adam",
+			"lr":0.01,
+		},
+		"cuda_device": -1,
+		"num_epochs": 200,
+		"shuffle": true
   }
 }

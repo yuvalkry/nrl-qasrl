@@ -1,0 +1,44 @@
+name: qanom_nrl_parser
+program: scripts/run.py
+method: random
+metric:
+  name: best_validation_precision-at-0.3
+  goal: maximize
+parameters:
+  # hyperparameters start with overrides
+  # Ranges
+  overrides.model.input_size:
+    min: 100
+    max: 500
+    distribution: q_uniform
+  overrides.model.text_field_embedder.elmo.dropout:
+    min: 0.2
+    max: 0.8
+    distribution: q_uniform
+  overrides.model.stacked_encoder.hidden_size:
+    min: 100
+    max: 600
+    distribution: q_uniform
+  overrides.model.stacked_encoder.num_layers:
+    values: [2,4,6,8,12]
+  overrides.model.stacked_encoder.recurrent_dropout_probability:
+    #values: ["true", "false"]
+    min: 0.001
+    max: 0.5
+    distribution: log_uniform
+  overrides.iterator.batch_size:
+    values: [16, 32, 64, 80, 120, 200]
+  overrides.trainer.optimizer.lr:
+    min: -7.0
+    max: 0
+    distribution: log_uniform
+  overrides.trainer.optimizer.weight_decay:
+    min: -12.0
+    max: -5.0
+    distribution: log_uniform
+  overrides.model.type:
+    value: span_detector
+  local_config_file:
+    value: "configs/wandb/train_qanom_span_elmo.jsonnet"
+  subcommand:
+    value: train

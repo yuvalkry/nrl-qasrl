@@ -12,7 +12,7 @@ from nrl.common.span import Span
 
 class ThresholdMetric(Metric):
     def __init__(self,
-            thresholds = [.5],
+            thresholds = (.5,),
             remove_overlap = False,
             prf_outfile = None,
             match_heuristic = None):
