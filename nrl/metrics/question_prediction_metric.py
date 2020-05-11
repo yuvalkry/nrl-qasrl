@@ -72,7 +72,7 @@ class QuestionPredictionMetric(Metric):
 
                 for n in range(mask.size(1)):
                     if mask[b][n] == 1:
-                        assert (argmax_predictions[b, n] > 1), "Invalid pred" + str(slot_logits[i][b, n])
+                        assert (argmax_predictions[b, n] > 1), "Invalid pred: " + str(slot_logits[i][b, n])
                         p.append(self._vocabulary.get_index_to_token_vocabulary("slot_%s"%(l))[int(argmax_predictions[b, n])])
                         g.append(self._vocabulary.get_index_to_token_vocabulary("slot_%s"%(l))[int(gold_labels[b, n])])
                         if i == 0:

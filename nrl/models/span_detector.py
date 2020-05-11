@@ -75,12 +75,12 @@ class SpanDetector(Model):
         encoded_text = self.stacked_encoder(embedded_text_with_predicate_indicator, mask)
         span_hidden, span_mask = self.span_hidden(encoded_text, encoded_text, mask, mask)
 
-        logits = self.pred(F.relu(span_hidden)).squeeze()
+        logits = self.pred(F.relu(span_hidden)).squeeze(-1)
         probs = torch.sigmoid(logits) * span_mask.float()
 
         output_dict = {"logits": logits, "probs": probs, 'span_mask': span_mask}
         if labeled_spans is not None:
-            span_label_mask = (labeled_spans[:, :, 0] >= 0).squeeze(-1).long()
+            span_label_mask = (labeled_spans[:, :, 0] >= 0).long()
             prediction_mask = self.get_prediction_map(labeled_spans, span_label_mask, sequence_length, annotations=annotations)
             loss = F.binary_cross_entropy_with_logits(logits, prediction_mask, weight=span_mask.float(), size_average=False)
             output_dict["loss"] = loss

@@ -6,10 +6,11 @@ from qanom.annotations.decode_encode_answers import Question as QanomQuestion
 
 
 class QuestionSlots:
-    Type = List[str]  # a symbol for annotating the type of the slot-dict in Instance
-    default_slots = ["wh", "aux", "subj", "obj", "prep", "obj2", "is_passive", "is_negated"]
+    Type = List[str]  # a symbol for annotating the type of the slot-list in Instance
+    default_slots = ["wh", "aux", "subj", "verb_slot_inflection", "obj", "prep", "obj2", "is_passive", "is_negated"]
     slots = default_slots
-    boolean_slots = ["is_passive", "is_negated"]
+    surface_slots = slots[:-2]
+    boolean_slots = slots[-2:]
 
     @classmethod
     def get_from_qanom_question(cls, question: QanomQuestion) -> Type:
@@ -27,7 +28,7 @@ class QuestionSlots:
         aux_slot = question_label["aux"]
         is_negated = "not" in verb_slot or "n't" in aux_slot
         is_passive = "be" in verb_slot and "pastParticiple" in verb_slot
-        slots.update(is_negated=str(is_negated), is_passive=str(is_passive))
+        slots.update(is_negated=str(is_negated), is_passive=str(is_passive), verb_slot_inflection=verb_slot)
         return QuestionSlots.from_dict(slots)
 
     @classmethod
@@ -57,6 +58,12 @@ class QuestionSlots:
             qDict[b_slot] = str2bool(qDict[b_slot])
         return QanomQuestion(**qDict)
 
+    @classmethod
+    def get_surface_slots(cls, question_slots: Type) -> Type:
+        """ Return only the surface slots of the question (to linearly produce the question text)"""
+        return [slot_val
+                for slot_name, slot_val in zip(QuestionSlots.slots, question_slots)
+                if slot_name in QuestionSlots.surface_slots]
 
 def str2bool(s: str) -> bool:
     """ Inverse of str(boolean) function. """

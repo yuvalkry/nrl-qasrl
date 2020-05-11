@@ -168,7 +168,6 @@ class SequenceSlotPredictor(QuestionGenerator):
     def from_params(cls, vocab: Vocabulary, params: Params) -> 'SequenceSlotPredictor':
         slot_labels = params.pop("slot_labels", None)
         input_dim = params.pop("input_dim")
-        dim_slot_hidden = params.pop("dim_slot_hidden")
         share_slot_hidden = params.pop("share_slot_hidden", False)
         rnn_layers = params.pop("rnn_layers", 1)
         share_rnn_cell = params.pop("share_rnn_cell", True)

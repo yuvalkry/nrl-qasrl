@@ -16,7 +16,7 @@ from allennlp.data.fields import ListField, SpanField
 from allennlp.service.predictors import Predictor
 from allennlp.common.file_utils import cached_path
 
-from nrl.data.util import cleanse_sentence_text
+from nrl.data.util import cleanse_sentence_text, QuestionSlots
 
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
@@ -187,17 +187,20 @@ class QaSrlParserPredictor(Predictor):
         return verb_annotations
 
 
-    def make_question_text(self, slots, verb):
-        # todo consider changes at slots, especially in 'verb' slot
+    def make_question_text(self, slots: QuestionSlots.Type, verb):
+        # considering changes at slots, especially in 'verb' slot
         slots = list(slots)
-        verb_slot = slots[3]
+        verb_slot_idx = QuestionSlots.slots.index("verb_slot_inflection")
+        verb_slot = slots[verb_slot_idx]
         split = verb_slot.split(" ")
         verb = verb.lower()
         if verb in self._verb_map:
             split[-1] = self._verb_map[verb][split[-1]]
         else:
             split[-1] = verb
-        slots[3] = " ".join(split)
-        sent_text = " ".join([slot for slot in slots if slot != "_"]) + "?"
+        # re-instanciate the verb slot - put the actual verb (inflected as desired) instead of the inflection description
+        slots[verb_slot_idx] = " ".join(split)
+        sent_text = " ".join([slot for slot in QuestionSlots.get_surface_slots(slots)
+                              if slot != "_"]) + "?"
         sent_text = sent_text[0].upper() + sent_text[1:]
         return sent_text

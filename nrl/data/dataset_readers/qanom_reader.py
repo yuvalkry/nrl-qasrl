@@ -95,3 +95,4 @@ class QANomReader(qasrl_reader.QaSrlReader):
         """ Recover 'verb' slot from a qanom...Question object.
         'verb' information is within Q.aux, Q.is_passive and Q.is_negated
          """
+        raise NotImplementedError
