@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 class QaSrlReader(DatasetReader):
     def __init__(self, 
                  token_indexers: Dict[str, TokenIndexer] = None,
-                 training_data_precentage = 1.0,
+                 training_data_percentage = 1.0,
                  has_provinence = False,
                  bio_labels = True,
                  slot_labels = None,
@@ -144,10 +144,18 @@ class QaSrlReader(DatasetReader):
 
         if annotations is not None:
             for i, slot_name in enumerate(self._slot_labels):
-                span_slot = ListField([LabelField(ann.slots[i], label_namespace='slot_%s'%slot_name) for ann in annotations for span in ann.all_spans])
+                if annotations:
+                    span_slot = ListField([LabelField(str(ann.slots[i]), label_namespace='slot_%s'%slot_name)
+                                           for ann in annotations for span in ann.all_spans])
+                else:
+                    span_slot = ListField([LabelField("str", label_namespace='slot_%s'%slot_name).empty_field()])
                 instance_dict['span_slot_%s'%slot_name] = span_slot
 
-            labeled_span_field = ListField([SpanField(span.start(), span.end(), text_field) for ann in annotations for span in ann.all_spans])
+            if annotations:
+                labeled_span_field = ListField([SpanField(span.start(), span.end(), text_field)
+                                                for ann in annotations for span in ann.all_spans])
+            else:
+                labeled_span_field = ListField([SpanField(0,0, text_field).empty_field()])
             instance_dict['labeled_spans'] = labeled_span_field
 
             if self._bio_labels:

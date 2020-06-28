@@ -65,6 +65,10 @@ class QuestionSlots:
                 for slot_name, slot_val in zip(QuestionSlots.slots, question_slots)
                 if slot_name in QuestionSlots.surface_slots]
 
+    @classmethod
+    def empty(cls):
+        return ['']*len(QuestionSlots.surface_slots) + [False]*len(QuestionSlots.boolean_slots)
+
 def str2bool(s: str) -> bool:
     """ Inverse of str(boolean) function. """
     assert s in ['True', 'False'], "Only `True` or `False` can cast to bool"

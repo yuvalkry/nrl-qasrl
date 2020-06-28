@@ -22,7 +22,7 @@ class QANomReader(qasrl_reader.QaSrlReader):
     """
     def __init__(self,
                  token_indexers: Dict[str, TokenIndexer] = None,
-                 training_data_precentage = 1.0,
+                 training_data_percentage = 1.0,
                  has_provinence = False,
                  bio_labels = True,
                  slot_labels = None,
@@ -30,7 +30,7 @@ class QANomReader(qasrl_reader.QaSrlReader):
                  min_valid_answers = 0,
                  question_sources = None):
         super(QANomReader, self).__init__(token_indexers=token_indexers,
-                                          training_data_precentage=training_data_precentage,
+                                          training_data_percentage=training_data_percentage,
                                           has_provinence=has_provinence,
                                           bio_labels=bio_labels,
                                           slot_labels=slot_labels,
@@ -59,7 +59,7 @@ class QANomReader(qasrl_reader.QaSrlReader):
                     self._num_verbs += 1
 
                     # Pipeline qanom model: Instances are only verbal nouns with arguments
-                    if not response.is_verbal or not response.roles:
+                    if not response.roles:
                         self._no_ann += 1
                         continue
 
@@ -90,9 +90,3 @@ class QANomReader(qasrl_reader.QaSrlReader):
         logger.info("\t%d QA pairs" % self._qa_pairs)
         logger.info("\t%d no annotation" % self._no_ann)
 
-    @classmethod
-    def qanomQuestionToVerbSlot(cls, qanomQuestion: QanomQuestion) -> str:
-        """ Recover 'verb' slot from a qanom...Question object.
-        'verb' information is within Q.aux, Q.is_passive and Q.is_negated
-         """
-        raise NotImplementedError

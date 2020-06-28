@@ -19,14 +19,14 @@ local bert_model = "bert-base-uncased";
       },
  },
     // for debug (small data samples):
-//  "train_data_path": QANOM_DATA_DIR + "/gold_set/final/annot.final.wikinews.dev.1-4.csv",
-//  "validation_data_path": QANOM_DATA_DIR + "/gold_set/final/annot.final.wikinews.dev.5.csv",
-//  "test_data_path": QANOM_DATA_DIR + "/gold_set/final/annot.final.wikinews.test.1.csv",
+  "train_data_path": "data/qanom_train_sample.csv",
+  "validation_data_path": QANOM_DATA_DIR + "/gold_set/final/annot.final.wikinews.dev.5.csv",
+  "test_data_path": QANOM_DATA_DIR + "/gold_set/final/annot.final.wikinews.test.1.csv",
 
     // for real:
-  "train_data_path": QANOM_DATA_DIR + "/train_set/final/annot.train.csv",
-  "validation_data_path": QANOM_DATA_DIR + "/gold_set/final/annot.final.dev.csv",
-  "test_data_path": QANOM_DATA_DIR + "/gold_set/final/annot.final.test.csv",
+//  "train_data_path": QANOM_DATA_DIR + "/train_set/final/annot.train.csv",
+//  "validation_data_path": QANOM_DATA_DIR + "/gold_set/final/annot.final.dev.csv",
+//  "test_data_path": QANOM_DATA_DIR + "/gold_set/final/annot.final.test.csv",
 
   "model": {
     "type": "question_predictor",

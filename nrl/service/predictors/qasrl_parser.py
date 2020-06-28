@@ -72,7 +72,7 @@ class QaSrlParserPredictor(Predictor):
 
         self._pretrained_vectors = read_pretrained_file("https://s3-us-west-2.amazonaws.com/allennlp/datasets/glove/glove.6B.100d.txt.gz")
 
-    def _sentence_to_qasrl_instances(self, json_dict: JsonDict) -> Tuple[List[Instance], JsonDict]:
+    def _sentence_to_qasrl_instances(self, json_dict: JsonDict) -> Tuple[List[Instance], JsonDict, List[str], List[int]]:
         sentence = json_dict["sentence"]
         tokens = self._tokenizer.split_words(sentence)
         words = [token.text for token in tokens]
@@ -181,7 +181,8 @@ class QaSrlParserPredictor(Predictor):
 
                 qa_pairs = []
                 for question, spans in questions.items():
-                    qa_pairs.append({"question":question, "spans":spans})
+                    qa_pairs.append({"question":question, "spans":spans, "slot_logits": output["slot_logits"]}) # todo add slot logits
+                                # todo but where do I get the q-slots for a specific span??
 
                 verb_annotations.append({"verb": verb, "qa_pairs": qa_pairs, "index": index})
         return verb_annotations

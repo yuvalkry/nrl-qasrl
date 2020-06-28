@@ -100,6 +100,7 @@ class QuestionPredictor(Model):
                     loss += slot_loss
             self.question_metric(slot_logits, span_slot_labels, labeled_spans, mask=span_mask, sequence_mask=mask)
             output_dict["loss"] = loss
+            output_dict["slot_logits"] = slot_logits    # for evaluation
 
         output_dict['span_mask'] = span_mask
 

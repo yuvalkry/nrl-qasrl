@@ -18,7 +18,7 @@ local QANOM_DATA_DIR = "data/qanom_annotations";
           }
       }
  },
-  "train_data_path": QANOM_DATA_DIR + "/train_set/final/annot.train.csv",
+  "train_data_path": QANOM_DATA_DIR + "/other/qasrl_and_qanom.train.csv",
   "validation_data_path": QANOM_DATA_DIR + "/gold_set/final/annot.final.dev.csv",
   "test_data_path": QANOM_DATA_DIR + "/gold_set/final/annot.final.test.csv",
   "model": {
@@ -60,7 +60,7 @@ local QANOM_DATA_DIR = "data/qanom_annotations";
     "grad_norm": 1.0,
     "patience": 50,
     "validation_metric": "+fscore-at-0.9",
-    "cuda_device": 1,
+    "cuda_device": [0,1,2,3],
     "optimizer": {
       "type": "adadelta",
       "rho": 0.95

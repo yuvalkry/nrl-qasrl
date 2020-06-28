@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 @Predictor.register("qanom_parser")
 class QaNomParserPredictor(UnlabeledQaNomParserPredictor):
     def __init__(self, model: Model, dataset_reader: DatasetReader, prediction_threshold: float = None):
-        super().__init__(model, dataset_reader, prediction_threshold=prediction_threshold or 0.2)
+        super().__init__(model, dataset_reader, prediction_threshold=prediction_threshold or 0.1)
 
     @overrides
     def predict_json(self, inputs: JsonDict, cuda_device: int = 0) -> JsonDict:

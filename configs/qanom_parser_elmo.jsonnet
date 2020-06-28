@@ -49,6 +49,7 @@ local QANOM_DATA_DIR = "data/qanom_annotations";
         },
         "predicate_feature_dim":100,
         "iou_threshold": 0.3,
+        "thresholds": [0.1, 0.5],
       },
     "question_predictor": {
         "type": "question_predictor",
@@ -69,7 +70,6 @@ local QANOM_DATA_DIR = "data/qanom_annotations";
         },
         "question_generator": {
             "type": "sequence",
-            "slot_labels": ["WH", "AUX", "SBJ", "TRG", "OBJ1", "PP", "OBJ2"],
             "dim_slot_hidden":100,
             "dim_rnn_hidden": 200,
             "input_dim": 300,
