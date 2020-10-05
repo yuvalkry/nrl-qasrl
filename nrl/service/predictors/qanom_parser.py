@@ -11,10 +11,9 @@ from torch.nn.parameter import Parameter
 
 from allennlp.models import Model
 from allennlp.common.util import JsonDict
-from allennlp.data.tokenizers.word_splitter import SpacyWordSplitter, SimpleWordSplitter
 from allennlp.data import DatasetReader, Instance
 from allennlp.data.fields import ListField, SpanField
-from allennlp.service.predictors import Predictor
+from allennlp.predictors import Predictor
 
 from nrl.service.predictors.qasrl_parser import QaSrlParserPredictor
 from nrl.service.predictors.unlabeled_qanom_parser import UnlabeledQaNomParserPredictor

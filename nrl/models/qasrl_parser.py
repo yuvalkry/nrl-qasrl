@@ -30,7 +30,7 @@ class QaSrlParser(Model):
         raise NotImplementedError()
 
     @classmethod
-    def from_params(cls, vocab: Vocabulary, params: Params) -> 'QaSrlParser':
+    def from_params(cls, params: Params, constructor_to_call, constructor_to_inspect, vocab: Vocabulary) -> 'QaSrlParser':
         span_detector = Model.from_params(vocab=vocab, params=params.pop("span_detector"))
         question_predictor = Model.from_params(vocab=vocab, params=params.pop("question_predictor"))
 

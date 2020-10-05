@@ -114,7 +114,7 @@ class QuestionPredictor(Model):
         return metric_dict
 
     @overrides
-    def decode(self, output_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
+    def make_output_human_readable(self, output_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
         span_mask = output_dict['span_mask'].data.cpu()
         batch_size, num_spans = span_mask.size()
 

@@ -28,10 +28,10 @@ from flask_cors import CORS
 from gevent.pywsgi import WSGIServer
 
 from allennlp.common import JsonDict
-from allennlp.common.util import import_submodules
+from allennlp.common.util import import_module_and_submodules
 from allennlp.models.archival import load_archive
-from allennlp.service.predictors import Predictor
-from allennlp.service.server_simple import ServerError
+from allennlp.predictors import Predictor
+# from allennlp_server import ServerError
 
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
@@ -135,7 +135,7 @@ def main(args):
 
     # Load modules
     for package_name in args.include_package:
-        import_submodules(package_name)
+        import_module_and_submodules(package_name)
 
     archive = load_archive(args.archive_path or 'tests/fixtures/bidaf/serialization/model.tar.gz', cuda_device=0)
     predictor = Predictor.from_archive(archive, args.predictor or 'machine-comprehension')

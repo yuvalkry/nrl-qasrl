@@ -10,10 +10,10 @@ from torch.nn.parameter import Parameter
 
 from allennlp.models import Model
 from allennlp.common.util import JsonDict
-from allennlp.data.tokenizers.word_splitter import SpacyWordSplitter
+from allennlp.data.tokenizers import SpacyTokenizer
 from allennlp.data import DatasetReader, Instance
 from allennlp.data.fields import ListField, SpanField
-from allennlp.service.predictors import Predictor
+from allennlp.predictors import Predictor
 from allennlp.common.file_utils import cached_path
 
 from nrl.data.util import cleanse_sentence_text, QuestionSlots
@@ -64,7 +64,7 @@ def read_pretrained_file(embeddings_filename, embedding_dim=100):
 class QaSrlParserPredictor(Predictor):
     def __init__(self, model: Model, dataset_reader: DatasetReader, prediction_threshold= None) -> None:
         super().__init__(model, dataset_reader)
-        self._tokenizer = SpacyWordSplitter(language='en_core_web_sm', pos_tags=True)
+        self._tokenizer = SpacyTokenizer(language='en_core_web_sm', pos_tags=True)
         self._model_vocab = model.vocab
         self._prediction_threshold = prediction_threshold or 0.5
 
@@ -74,7 +74,7 @@ class QaSrlParserPredictor(Predictor):
 
     def _sentence_to_qasrl_instances(self, json_dict: JsonDict) -> Tuple[List[Instance], JsonDict, List[str], List[int]]:
         sentence = json_dict["sentence"]
-        tokens = self._tokenizer.split_words(sentence)
+        tokens = self._tokenizer.tokenize(sentence)
         words = [token.text for token in tokens]
         text = " ".join(words)
 

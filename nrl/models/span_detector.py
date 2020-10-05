@@ -65,6 +65,7 @@ class SpanDetector(Model):
  
         embedded_text_with_predicate_indicator = torch.cat([embedded_text_input, embedded_predicate_indicator], -1)
         batch_size, sequence_length, embedding_dim_with_predicate_feature = embedded_text_with_predicate_indicator.size()
+        print("\n**** encoder dim: %d embedding dim: %d" % (self.stacked_encoder.get_input_dim(), embedding_dim_with_predicate_feature))
 
         if self.stacked_encoder.get_input_dim() != embedding_dim_with_predicate_feature:
             raise ConfigurationError("The SRL model uses an indicator feature, which makes "
@@ -90,7 +91,7 @@ class SpanDetector(Model):
 
         # We need to retain the mask in the output dictionary
         # so that we can crop the sequences to remove padding
-        # when we do viterbi inference in self.decode.
+        # when we do viterbi inference in self.make_output_human_readable.
         output_dict["mask"] = mask
         return output_dict
 
@@ -135,7 +136,7 @@ class SpanDetector(Model):
         return torch.autograd.Variable(labels)
 
     @overrides
-    def decode(self, output_dict: Dict[str, torch.Tensor], remove_overlap=True) -> Dict[str, torch.Tensor]:
+    def make_output_human_readable(self, output_dict: Dict[str, torch.Tensor], remove_overlap=True) -> Dict[str, torch.Tensor]:
         probs = output_dict['probs']
         mask = output_dict['span_mask']
         spans = self.to_scored_spans(probs, mask)
