@@ -42,7 +42,7 @@ class UnlabeledQaNomParserPredictor(UnlabeledQasrlParserPredictor):
         for i, word in enumerate(words):
             # here we should decide whether the i token is a predicate.
             # Take all candidate nouns (in the same way filtered for QANom annotations - using lexical resources)
-            if self.classify_is_verbal_noun(words, i, pos_tags):
+            if self.classify_is_candidate_for_verbal_noun(words, i, pos_tags):
                 result_dict["verbs"].append(word)
 
                 instance = self._dataset_reader._make_instance_from_text(sent_text, i)
@@ -52,7 +52,7 @@ class UnlabeledQaNomParserPredictor(UnlabeledQasrlParserPredictor):
         return instances, result_dict, words, verb_indexes
 
 
-    def classify_is_verbal_noun(self, sentence_words: List[str], target_idx: int, pos_tags: List[str]) -> bool:
+    def classify_is_candidate_for_verbal_noun(self, sentence_words: List[str], target_idx: int, pos_tags: List[str]) -> bool:
         # Take all candidate nouns (in the same way filtered for QANom annotations - using lexical resources)
         from qanom.candidate_extraction.prepare_qanom_prompts import COMMON_NOUNS_POS, is_candidate_noun
         target_word = sentence_words[target_idx]
