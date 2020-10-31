@@ -37,7 +37,7 @@ class QuestionPredictor(Model):
         self.dim_hidden = dim_hidden
 
         self.text_field_embedder = text_field_embedder
-        self.predicate_feature_embedding = Embedding(2, predicate_feature_dim)
+        self.predicate_feature_embedding = Embedding(predicate_feature_dim, 2)
 
         self.embedding_dropout = Dropout(p=embedding_dropout)
 

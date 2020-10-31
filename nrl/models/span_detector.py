@@ -40,7 +40,7 @@ class SpanDetector(Model):
         self.dim_hidden = dim_hidden
 
         self.text_field_embedder = text_field_embedder
-        self.predicate_feature_embedding = Embedding(2, predicate_feature_dim)
+        self.predicate_feature_embedding = Embedding(predicate_feature_dim, 2)
 
         self.embedding_dropout = Dropout(p=embedding_dropout)
 
@@ -65,7 +65,6 @@ class SpanDetector(Model):
  
         embedded_text_with_predicate_indicator = torch.cat([embedded_text_input, embedded_predicate_indicator], -1)
         batch_size, sequence_length, embedding_dim_with_predicate_feature = embedded_text_with_predicate_indicator.size()
-        print("\n**** encoder dim: %d embedding dim: %d" % (self.stacked_encoder.get_input_dim(), embedding_dim_with_predicate_feature))
 
         if self.stacked_encoder.get_input_dim() != embedding_dim_with_predicate_feature:
             raise ConfigurationError("The SRL model uses an indicator feature, which makes "

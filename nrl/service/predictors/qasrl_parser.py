@@ -133,60 +133,54 @@ class QaSrlParserPredictor(Predictor):
                 int(added_weights.shape[0] / new_weights[num_words:].shape[0]))))
             self._model.question_predictor.text_field_embedder.token_embedder_tokens.weight = Parameter(new_weights)
 
-
     @overrides
     def predict_json(self, inputs: JsonDict, cuda_device: int = 0) -> JsonDict:
-
         instances, results, words, verb_indexes = self._sentence_to_qasrl_instances(inputs)
-
         self._expand_vocab(words)
-
         verbs_for_instances = results["verbs"]
-
         instances_with_spans = []
         instance_spans = []
+        instance_scores = []
         if instances:
             span_outputs = self._model.span_detector.forward_on_instances(instances)
-        
             for instance, span_output in zip(instances, span_outputs):
                 field_dict = instance.fields
                 text_field = field_dict['text']
-
                 spans = [s[0] for s in span_output['spans'] if s[1] >= self._prediction_threshold]
+                scores = [s[1].item() for s in span_output['spans'] if s[1] >= self._prediction_threshold]
                 if len(spans) > 0:
                     instance_spans.append(spans)
-
+                    instance_scores.append(scores)
                     labeled_span_field = ListField([SpanField(span.start(), span.end(), text_field) for span in spans])
                     field_dict['labeled_spans'] = labeled_span_field
                     instances_with_spans.append(Instance(field_dict))
-
-        verb_annotations = self.predict_questions(instances_with_spans, instance_spans, verbs_for_instances, verb_indexes, words)
+        verb_annotations = self.predict_questions(instances_with_spans, instance_spans, verbs_for_instances,
+                                                  verb_indexes, words, instance_scores)
         results["verbs"] = verb_annotations
-
         return results
 
-
-    def predict_questions(self, instances_with_spans, instance_spans, verbs_for_instances, verb_indexes, words):
+    def predict_questions(self, instances_with_spans, instance_spans, verbs_for_instances, verb_indexes, words,
+                          instance_scores):
         verb_annotations = []
         if instances_with_spans:
             outputs = self._model.question_predictor.forward_on_instances(instances_with_spans)
-
-            for output, spans, verb, index in zip(outputs, instance_spans, verbs_for_instances, verb_indexes):
+            for output, spans, scores, verb, index in zip(outputs, instance_spans, instance_scores, verbs_for_instances,
+                                                          verb_indexes):
                 questions = {}
-                for question, span in zip(output['questions'], spans):
+                question_slots = {}
+                for question, span, score in zip(output['questions'], spans, scores):
                     question_text = self.make_question_text(question, verb)
-                    span_text = " ".join([words[i] for i in range(span.start(), span.end()+1)])
-                    span_rep = {"start": span.start(), "end": span.end(), "text":span_text}
+                    span_text = " ".join([words[i] for i in range(span.start(), span.end() + 1)])
+                    span_rep = {"start": span.start(), "end": span.end(), "text": span_text, "score": score}
                     questions.setdefault(question_text, []).append(span_rep)
-
+                    question_slots[question_text] = question
                 qa_pairs = []
                 for question, spans in questions.items():
-                    qa_pairs.append({"question":question, "spans":spans, "slot_logits": output["slot_logits"]}) # todo add slot logits
-                                # todo but where do I get the q-slots for a specific span??
-
+                    q_slots = question_slots[question]
+                    q_slots = dict(zip(QuestionSlots.slots, q_slots))
+                    qa_pairs.append({"question": question, "spans": spans, "slots": q_slots})
                 verb_annotations.append({"verb": verb, "qa_pairs": qa_pairs, "index": index})
         return verb_annotations
-
 
     def make_question_text(self, slots: QuestionSlots.Type, verb):
         # considering changes at slots, especially in 'verb' slot
