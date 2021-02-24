@@ -1,18 +1,10 @@
 // local QANOM_DATA_DIR = "data/qanom_annotations";
-local QANOM_DATA_DIR = "/home/nlp/yuvalk/qanom/QANom-anlp-1.1.0/dataset" ;
+local QANOM_DATA_DIR = "/home/nlp/yuvalk/qanom/QANom-anlp-1.1.0/dataset/small" ;
 local bert_model = "bert-base-uncased";
 
 {
   "dataset_reader": {
       "type": "qanom",
-      "tokenizer": {
-        "type": "pretrained_transformer",
-        "model_name": bert_model,
-        "add_special_tokens": false,
-        "tokenizer_kwargs": {
-            "additional_special_tokens": ["@V_B", "@V_E", "@ARG_B", "@ARG_E"]
-        }
-      },
       "token_indexers": {
           "bert": {
                   "type": "pretrained_transformer",
@@ -24,8 +16,6 @@ local bert_model = "bert-base-uncased";
   "train_data_path": QANOM_DATA_DIR + "/train.csv",
   "validation_data_path": QANOM_DATA_DIR + "/dev.csv",
   "test_data_path": QANOM_DATA_DIR + "/test.csv",
-  "evaluate_on_test": true,
-
 // for debug (small data samples):
 //  "train_data_path": "data/qanom_train_sample.csv",
 //  "validation_data_path": QANOM_DATA_DIR + "/gold_set/final/annot.final.wikinews.dev.5.csv",
@@ -72,25 +62,25 @@ local bert_model = "bert-base-uncased";
         ]
     ] },
     "predicate_feature_dim":100,
-    "thresholds": [0.02, 0.05, 0.2, 0.5, 0.9],
+    "thresholds": [0.05, 0.2, 0.5, 0.9],
     "iou_threshold": 0.3,
   },
   "data_loader": {
     batch_sampler: {
       "type": "bucket",
       // "sorting_keys": [["text", "num_tokens"]],
-      "batch_size" : 30
+      "batch_size" : 80
     }
   },
   // "distributed": {
-  //  "cuda_devices": [1,2],
+  // "cuda_devices": [1,2],
   // },
   "trainer": {
     "num_epochs": 500,
     "grad_clipping": 1.0,
-    "patience": 50,
+    "patience": 500,
     "validation_metric": "+fscore-at-0.5",
-    "cuda_device": 2,
+    "cuda_device": 3,
     "optimizer": {
       "type": "adadelta",
       "rho": 0.95
